@@ -1,12 +1,12 @@
 // ============================================================
-// SFM POLICY APP — DATA
+// STF POLICY APP — DATA
 // Edit this file to update church details, people & policies
 // ============================================================
 
-window.SFM_CONFIG = {
+window.STF_CONFIG = {
   church: {
     name: "St Francis Mackworth",
-    shortName: "SFM",
+    shortName: "STF",
     diocese: "Derby Diocese",
     network: "HTB Network",
     dbsUmbrella: "Thirtyone:eight (via Derby Diocese)",
@@ -47,7 +47,7 @@ window.SFM_CONFIG = {
 // ============================================================
 // POLICY DATA — 35 POLICIES
 // ============================================================
-window.SFM_POLICIES = [
+window.STF_POLICIES = [
   // ── SET 1: ORIGINAL 14 ──────────────────────────────────────
   {
     id:"p01", number:"01", title:"Parish Safeguarding Policy",
@@ -413,7 +413,7 @@ window.SFM_POLICIES = [
   },
   {
     id:"p30", number:"30", title:"Risk Management Policy",
-    tagline:"Identifying, assessing, and managing risk to protect the mission and people of SFM",
+    tagline:"Identifying, assessing, and managing risk to protect the mission and people of STF",
     category:"Governance", pccRequired:true, version:"1.0", reviewDate:"April 2027",
     owner:"Operations Manager", status:"active",
     sections:[
