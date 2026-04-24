@@ -39,7 +39,7 @@ window.SFM_CONFIG = {
   },
 
   // ── APP SETTINGS ────────────────────────────────────────────
-  adminPasswordHash: "sfm2024admin", // change this
+  adminPasswordHash: "STF072020", // change this
   googleSheetsId: "", // paste your Google Sheet ID here after setup
   googleApiKey: "",   // paste your API key here after setup
 };
