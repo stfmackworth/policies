@@ -1,0 +1,1131 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>SFM Policy Hub</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Crimson+Pro:ital,wght@0,300;0,400;0,600;0,700;1,400&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet">
+<style>
+/* ── RESET & TOKENS ─────────────────────────────────────── */
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+:root{
+  --ink:#0C0F14;
+  --ink2:#1E2532;
+  --slate:#445566;
+  --muted:#7A8899;
+  --faint:#B8C4D0;
+  --border:#E2E8F0;
+  --surface:#F7F9FC;
+  --white:#FFFFFF;
+  --accent:#1A3A6B;
+  --accent-mid:#2563A8;
+  --accent-light:#EEF4FF;
+  --gold:#B8860B;
+  --gold-light:#FEF9EC;
+  --red:#C0392B;
+  --red-light:#FDF2F0;
+  --green:#1A6B40;
+  --green-light:#EDF7F2;
+  --amber:#B45309;
+  --amber-light:#FFFBEB;
+  --purple:#5B21B6;
+  --purple-light:#F5F0FF;
+  --nav-w:240px;
+  --font-serif:'Crimson Pro',Georgia,serif;
+  --font-sans:'DM Sans',system-ui,sans-serif;
+}
+
+body{font-family:var(--font-sans);color:var(--ink);background:var(--surface);font-size:14px;line-height:1.6;overflow-x:hidden}
+h1,h2,h3,h4{font-family:var(--font-serif);font-weight:600;line-height:1.25}
+a{color:var(--accent-mid);text-decoration:none}
+button{cursor:pointer;font-family:var(--font-sans)}
+input,textarea,select{font-family:var(--font-sans)}
+
+/* ── AUTH SCREEN ─────────────────────────────────────────── */
+#auth-screen{
+  position:fixed;inset:0;background:var(--ink);display:flex;align-items:center;justify-content:center;z-index:1000;
+}
+.auth-box{
+  background:var(--white);border-radius:16px;padding:48px 44px;width:100%;max-width:380px;text-align:center;
+}
+.auth-cross{
+  width:48px;height:48px;margin:0 auto 20px;
+  display:flex;align-items:center;justify-content:center;
+}
+.auth-cross svg{width:48px;height:48px}
+.auth-box h1{font-size:26px;margin-bottom:4px;color:var(--ink)}
+.auth-box p{font-size:13px;color:var(--muted);margin-bottom:28px}
+.auth-tabs{display:flex;gap:0;border:1px solid var(--border);border-radius:8px;overflow:hidden;margin-bottom:20px}
+.auth-tab{flex:1;padding:9px;border:none;background:transparent;font-size:13px;font-weight:500;color:var(--muted);transition:all .15s}
+.auth-tab.active{background:var(--accent);color:#fff}
+.auth-input{width:100%;padding:10px 12px;border:1px solid var(--border);border-radius:8px;font-size:14px;margin-bottom:12px;outline:none;transition:border-color .15s}
+.auth-input:focus{border-color:var(--accent-mid)}
+.auth-btn{width:100%;padding:11px;background:var(--accent);color:#fff;border:none;border-radius:8px;font-size:14px;font-weight:600;transition:background .15s}
+.auth-btn:hover{background:var(--accent-mid)}
+.auth-error{color:var(--red);font-size:12px;margin-top:8px}
+.auth-hint{font-size:11px;color:var(--faint);margin-top:16px}
+
+/* ── LAYOUT ──────────────────────────────────────────────── */
+#app{display:none;min-height:100vh}
+#app.visible{display:flex}
+
+/* Sidebar */
+.sidebar{
+  width:var(--nav-w);flex-shrink:0;background:var(--ink);color:#fff;
+  position:fixed;top:0;bottom:0;left:0;overflow-y:auto;z-index:50;
+  display:flex;flex-direction:column;
+}
+.sidebar-logo{
+  padding:24px 20px 16px;border-bottom:1px solid rgba(255,255,255,.08);
+}
+.sidebar-logo-name{font-family:var(--font-serif);font-size:18px;font-weight:600;color:#fff;line-height:1.2}
+.sidebar-logo-sub{font-size:10px;color:rgba(255,255,255,.4);letter-spacing:.08em;text-transform:uppercase;margin-top:2px}
+.sidebar-cross{
+  width:32px;height:32px;margin-bottom:10px;opacity:.9;
+}
+
+nav{padding:12px 0;flex:1}
+.nav-section{padding:8px 20px 4px;font-size:10px;font-weight:600;letter-spacing:.1em;text-transform:uppercase;color:rgba(255,255,255,.3)}
+.nav-item{
+  display:flex;align-items:center;gap:10px;padding:9px 20px;
+  font-size:13px;color:rgba(255,255,255,.65);cursor:pointer;transition:all .15s;
+  border-left:3px solid transparent;
+}
+.nav-item:hover{background:rgba(255,255,255,.06);color:#fff}
+.nav-item.active{background:rgba(255,255,255,.1);color:#fff;border-left-color:rgba(255,255,255,.5)}
+.nav-item .nav-icon{width:16px;height:16px;opacity:.7;flex-shrink:0}
+.nav-item.active .nav-icon{opacity:1}
+.nav-badge{margin-left:auto;background:var(--red);color:#fff;font-size:10px;font-weight:700;padding:1px 6px;border-radius:10px;min-width:18px;text-align:center}
+.nav-badge.gold{background:var(--gold)}
+
+.sidebar-footer{padding:16px 20px;border-top:1px solid rgba(255,255,255,.08)}
+.sidebar-role{font-size:11px;color:rgba(255,255,255,.4)}
+.sidebar-name{font-size:13px;color:rgba(255,255,255,.8);font-weight:500}
+
+/* Main content */
+.main{margin-left:var(--nav-w);flex:1;min-height:100vh;display:flex;flex-direction:column}
+.topbar{
+  background:var(--white);border-bottom:1px solid var(--border);
+  padding:0 32px;height:56px;display:flex;align-items:center;justify-content:space-between;
+  position:sticky;top:0;z-index:40;
+}
+.topbar-title{font-family:var(--font-serif);font-size:20px;font-weight:600;color:var(--ink)}
+.topbar-actions{display:flex;gap:10px;align-items:center}
+
+.page{padding:32px;flex:1;display:none}
+.page.active{display:block}
+
+/* ── BUTTONS ─────────────────────────────────────────────── */
+.btn{padding:8px 18px;border-radius:7px;font-size:13px;font-weight:500;border:none;transition:all .15s;display:inline-flex;align-items:center;gap:7px}
+.btn-primary{background:var(--accent);color:#fff}
+.btn-primary:hover{background:var(--accent-mid)}
+.btn-secondary{background:var(--white);color:var(--slate);border:1px solid var(--border)}
+.btn-secondary:hover{border-color:var(--faint);color:var(--ink)}
+.btn-danger{background:var(--red);color:#fff}
+.btn-danger:hover{background:#a93226}
+.btn-ghost{background:transparent;color:var(--muted);border:1px solid var(--border)}
+.btn-ghost:hover{background:var(--surface);color:var(--slate)}
+.btn-sm{padding:5px 12px;font-size:12px}
+.btn-icon{width:32px;height:32px;padding:0;justify-content:center;align-items:center}
+
+/* ── CARDS ──────────────────────────────────────────────── */
+.card{background:var(--white);border:1px solid var(--border);border-radius:12px;padding:24px}
+.card-sm{padding:16px 20px}
+
+/* ── STATS ROW ───────────────────────────────────────────── */
+.stats-row{display:grid;grid-template-columns:repeat(4,1fr);gap:16px;margin-bottom:28px}
+.stat-card{background:var(--white);border:1px solid var(--border);border-radius:12px;padding:20px 24px}
+.stat-num{font-family:var(--font-serif);font-size:36px;font-weight:700;line-height:1;margin-bottom:4px}
+.stat-label{font-size:12px;color:var(--muted)}
+
+/* ── SECTION HEADERS ─────────────────────────────────────── */
+.section-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:18px}
+.section-title{font-family:var(--font-serif);font-size:22px;font-weight:600;color:var(--ink)}
+
+/* ── BADGES / TAGS ───────────────────────────────────────── */
+.badge{display:inline-flex;align-items:center;gap:4px;padding:2px 9px;border-radius:4px;font-size:11px;font-weight:600}
+.badge-safeguard{background:var(--red-light);color:var(--red)}
+.badge-governance{background:var(--accent-light);color:var(--accent)}
+.badge-finance{background:var(--green-light);color:var(--green)}
+.badge-hr{background:var(--purple-light);color:var(--purple)}
+.badge-ops{background:#EFF6FF;color:#1D4ED8}
+.badge-hs{background:var(--amber-light);color:var(--amber)}
+.badge-comms{background:#FFF7ED;color:#C2410C}
+.badge-pastoral{background:#FDF4FF;color:#7E22CE}
+.badge-other{background:var(--surface);color:var(--slate)}
+.badge-pcc{background:var(--gold-light);color:var(--gold)}
+.badge-active{background:var(--green-light);color:var(--green)}
+.badge-draft{background:var(--amber-light);color:var(--amber)}
+.badge-review{background:var(--red-light);color:var(--red)}
+
+/* ── POLICY GRID ─────────────────────────────────────────── */
+.policy-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(320px,1fr));gap:14px}
+.policy-card{
+  background:var(--white);border:1px solid var(--border);border-radius:10px;
+  padding:18px 20px;cursor:pointer;transition:all .15s;position:relative;
+  border-left:4px solid var(--border);
+}
+.policy-card:hover{box-shadow:0 4px 18px rgba(0,0,0,.08);border-color:var(--faint)}
+.policy-card.cat-Safeguarding{border-left-color:var(--red)}
+.policy-card.cat-Governance{border-left-color:var(--accent-mid)}
+.policy-card.cat-Finance{border-left-color:var(--green)}
+.policy-card.cat-HR{border-left-color:var(--purple)}
+.policy-card.cat-Operations{border-left-color:#2563EB}
+.policy-card.cat-HS{border-left-color:var(--amber)}
+.policy-card.cat-Comms{border-left-color:#EA580C}
+.policy-card.cat-Pastoral{border-left-color:#9333EA}
+.policy-num{font-size:10px;font-weight:700;letter-spacing:.08em;color:var(--muted);margin-bottom:6px}
+.policy-title{font-family:var(--font-serif);font-size:16px;font-weight:600;color:var(--ink);margin-bottom:5px;line-height:1.3}
+.policy-tagline{font-size:12px;color:var(--slate);line-height:1.5;margin-bottom:12px}
+.policy-meta{display:flex;align-items:center;gap:6px;flex-wrap:wrap}
+
+/* ── SEARCH / FILTER BAR ─────────────────────────────────── */
+.filter-bar{display:flex;gap:10px;margin-bottom:20px;flex-wrap:wrap;align-items:center}
+.search-input{
+  padding:8px 12px 8px 34px;border:1px solid var(--border);border-radius:8px;
+  font-size:13px;color:var(--ink);background:var(--white);outline:none;width:240px;
+  background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='14' height='14' viewBox='0 0 24 24' fill='none' stroke='%237A8899' stroke-width='2'%3E%3Ccircle cx='11' cy='11' r='8'/%3E%3Cpath d='m21 21-4.35-4.35'/%3E%3C/svg%3E");
+  background-repeat:no-repeat;background-position:10px center;transition:border-color .15s;
+}
+.search-input:focus{border-color:var(--accent-mid)}
+.filter-pill{
+  padding:5px 14px;border-radius:20px;border:1px solid var(--border);
+  background:var(--white);color:var(--slate);font-size:12px;font-weight:500;cursor:pointer;transition:all .15s
+}
+.filter-pill.active{background:var(--ink);color:#fff;border-color:var(--ink)}
+
+/* ── POLICY VIEW ─────────────────────────────────────────── */
+#policy-view{display:none}
+#policy-view.visible{display:block}
+.policy-header-block{
+  background:var(--white);border:1px solid var(--border);border-radius:12px;
+  padding:36px 40px;margin-bottom:16px;
+}
+.policy-header-block h1{font-size:32px;margin:8px 0 10px;color:var(--ink)}
+.policy-header-block .tagline{font-style:italic;color:var(--slate);font-size:16px;margin-bottom:28px}
+.meta-grid{display:grid;grid-template-columns:1fr 1fr;border:1px solid var(--border);border-radius:8px;overflow:hidden}
+.meta-row{display:flex;border-bottom:1px solid var(--border)}
+.meta-row:last-child{border-bottom:none}
+.meta-key{width:170px;flex-shrink:0;padding:10px 16px;font-weight:600;font-size:12px;color:var(--slate);border-right:1px solid var(--border);background:var(--surface)}
+.meta-val{padding:10px 16px;font-size:12px;color:var(--ink)}
+.policy-section{background:var(--white);border:1px solid var(--border);border-radius:8px;overflow:hidden;margin-bottom:6px}
+.policy-section-head{padding:13px 22px;background:var(--surface);border-bottom:1px solid var(--border)}
+.policy-section-head h3{font-size:14px;font-weight:600;color:var(--ink)}
+.policy-section-body{padding:16px 22px}
+.policy-section-body p{font-size:13.5px;color:#1E293B;line-height:1.75;white-space:pre-wrap}
+
+/* ── FORMS ───────────────────────────────────────────────── */
+.form-grid{display:grid;gap:16px}
+.form-grid-2{grid-template-columns:1fr 1fr}
+.form-group{display:flex;flex-direction:column;gap:5px}
+label.form-label{font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.06em;color:var(--muted)}
+input.form-input,textarea.form-input,select.form-input{
+  padding:9px 12px;border:1px solid var(--border);border-radius:8px;
+  font-size:13px;color:var(--ink);background:var(--white);outline:none;transition:border-color .15s;
+}
+input.form-input:focus,textarea.form-input:focus,select.form-input:focus{border-color:var(--accent-mid)}
+textarea.form-input{resize:vertical;min-height:100px}
+
+/* ── TOGGLE ──────────────────────────────────────────────── */
+.toggle-wrap{display:flex;align-items:center;gap:10px}
+.toggle{width:38px;height:22px;border-radius:11px;background:#E2E8F0;cursor:pointer;position:relative;transition:background .2s;flex-shrink:0;border:none}
+.toggle.on{background:var(--accent)}
+.toggle-thumb{position:absolute;top:3px;left:3px;width:16px;height:16px;border-radius:50%;background:#fff;transition:left .2s;box-shadow:0 1px 3px rgba(0,0,0,.2)}
+.toggle.on .toggle-thumb{left:19px}
+.toggle-label{font-size:13px;color:var(--slate)}
+
+/* ── EDITOR SECTIONS ─────────────────────────────────────── */
+.section-editor{background:var(--white);border:1px solid var(--border);border-radius:10px;overflow:hidden;margin-bottom:10px}
+.section-editor-head{background:var(--surface);border-bottom:1px solid var(--border);padding:10px 16px;display:flex;gap:8px;align-items:center}
+.section-editor-body{padding:14px 16px}
+.section-number{font-size:11px;font-weight:700;color:var(--muted);flex-shrink:0}
+.add-section-btn{width:100%;padding:12px;border:1.5px dashed var(--border);border-radius:8px;background:none;color:var(--muted);font-size:13px;font-weight:500;transition:all .15s}
+.add-section-btn:hover{border-color:var(--accent-mid);color:var(--accent-mid)}
+
+/* ── PEOPLE PAGE ─────────────────────────────────────────── */
+.people-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(280px,1fr));gap:16px}
+.person-card{background:var(--white);border:1px solid var(--border);border-radius:12px;padding:20px}
+.person-role{font-size:10px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:var(--muted);margin-bottom:6px}
+.person-name{font-family:var(--font-serif);font-size:18px;font-weight:600;margin-bottom:4px}
+.person-email{font-size:12px;color:var(--slate);margin-bottom:10px}
+.person-dbs{display:inline-flex;align-items:center;gap:5px;font-size:11px;padding:3px 9px;border-radius:4px}
+.person-dbs.valid{background:var(--green-light);color:var(--green)}
+.person-dbs.missing{background:var(--red-light);color:var(--red)}
+.person-actions{margin-top:12px;display:flex;gap:8px}
+
+/* ── COMPLIANCE / DASHBOARD ──────────────────────────────── */
+.compliance-item{
+  display:flex;align-items:center;gap:12px;padding:13px 16px;
+  background:var(--white);border:1px solid var(--border);border-radius:8px;margin-bottom:6px;
+}
+.compliance-dot{width:10px;height:10px;border-radius:50%;flex-shrink:0}
+.compliance-dot.green{background:var(--green)}
+.compliance-dot.amber{background:#F59E0B}
+.compliance-dot.red{background:var(--red)}
+.compliance-text{flex:1;font-size:13px}
+.compliance-action{font-size:12px;color:var(--accent-mid);font-weight:500}
+
+/* ── MODAL ───────────────────────────────────────────────── */
+.modal-overlay{
+  position:fixed;inset:0;background:rgba(12,15,20,.55);z-index:500;
+  display:none;align-items:center;justify-content:center;padding:24px;
+}
+.modal-overlay.open{display:flex}
+.modal{background:var(--white);border-radius:16px;width:100%;max-width:560px;max-height:90vh;overflow-y:auto}
+.modal-head{padding:24px 28px;border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between}
+.modal-title{font-family:var(--font-serif);font-size:20px;font-weight:600}
+.modal-body{padding:24px 28px}
+.modal-foot{padding:16px 28px;border-top:1px solid var(--border);display:flex;gap:10px;justify-content:flex-end}
+
+/* ── EDITOR LAYOUT ───────────────────────────────────────── */
+.editor-layout{display:grid;grid-template-columns:1fr 280px;gap:20px;align-items:start}
+.editor-sidebar{position:sticky;top:72px}
+
+/* ── ALERTS ──────────────────────────────────────────────── */
+.alert{padding:12px 16px;border-radius:8px;font-size:13px;margin-bottom:12px;display:flex;gap:10px;align-items:flex-start}
+.alert-warn{background:var(--amber-light);color:var(--amber);border:1px solid #FDE68A}
+.alert-info{background:var(--accent-light);color:var(--accent);border:1px solid #BFDBFE}
+.alert-success{background:var(--green-light);color:var(--green);border:1px solid #A7F3D0}
+
+/* ── TABLE ───────────────────────────────────────────────── */
+.data-table{width:100%;border-collapse:collapse}
+.data-table th{padding:10px 14px;text-align:left;font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.06em;color:var(--muted);border-bottom:2px solid var(--border)}
+.data-table td{padding:12px 14px;border-bottom:1px solid var(--border);font-size:13px;vertical-align:middle}
+.data-table tr:last-child td{border-bottom:none}
+.data-table tr:hover td{background:var(--surface)}
+
+/* ── PRINT ───────────────────────────────────────────────── */
+@media print{
+  .sidebar,.topbar,#policy-view .topbar-actions,.btn{display:none!important}
+  .main{margin-left:0!important}
+  .policy-header-block,.policy-section{break-inside:avoid}
+  @page{margin:2cm}
+}
+
+/* ── RESPONSIVE ──────────────────────────────────────────── */
+@media(max-width:900px){
+  :root{--nav-w:200px}
+  .stats-row{grid-template-columns:1fr 1fr}
+  .editor-layout{grid-template-columns:1fr}
+  .editor-sidebar{position:static}
+}
+</style>
+</head>
+<body>
+
+<!-- ── AUTH SCREEN ──────────────────────────────────────── -->
+<div id="auth-screen">
+  <div class="auth-box">
+    <div class="auth-cross">
+      <svg viewBox="0 0 48 48" fill="none" xmlns="http://www.w3.org/2000/svg">
+        <rect x="20" y="2" width="8" height="44" rx="4" fill="#1A3A6B"/>
+        <rect x="2" y="20" width="44" height="8" rx="4" fill="#1A3A6B"/>
+      </svg>
+    </div>
+    <h1>SFM Policy Hub</h1>
+    <p>St Francis Mackworth · Derby Diocese</p>
+    <div class="auth-tabs">
+      <button class="auth-tab active" onclick="setAuthMode('read')">View policies</button>
+      <button class="auth-tab" onclick="setAuthMode('admin')">Admin access</button>
+    </div>
+    <div id="auth-read">
+      <button class="auth-btn" onclick="login('read')">Enter as Reader</button>
+    </div>
+    <div id="auth-admin" style="display:none">
+      <input class="auth-input" type="password" id="admin-pw" placeholder="Admin password" onkeydown="if(event.key==='Enter')login('admin')">
+      <button class="auth-btn" onclick="login('admin')">Sign in as Admin</button>
+      <div class="auth-error" id="auth-error"></div>
+    </div>
+    <p class="auth-hint">Readers can view all policies · Admins can create, edit, and manage people</p>
+  </div>
+</div>
+
+<!-- ── APP ──────────────────────────────────────────────── -->
+<div id="app">
+
+  <!-- Sidebar -->
+  <aside class="sidebar">
+    <div class="sidebar-logo">
+      <svg class="sidebar-cross" viewBox="0 0 32 32" fill="none">
+        <rect x="13" y="1" width="6" height="30" rx="3" fill="rgba(255,255,255,0.85)"/>
+        <rect x="1" y="13" width="30" height="6" rx="3" fill="rgba(255,255,255,0.85)"/>
+      </svg>
+      <div class="sidebar-logo-name">SFM Policy Hub</div>
+      <div class="sidebar-logo-sub">St Francis Mackworth</div>
+    </div>
+
+    <nav>
+      <div class="nav-section">Overview</div>
+      <div class="nav-item active" onclick="showPage('dashboard')">
+        <svg class="nav-icon" viewBox="0 0 20 20" fill="currentColor"><path d="M2 11a1 1 0 011-1h2a1 1 0 011 1v5a1 1 0 01-1 1H3a1 1 0 01-1-1v-5zm6-4a1 1 0 011-1h2a1 1 0 011 1v9a1 1 0 01-1 1H9a1 1 0 01-1-1V7zm6-3a1 1 0 011-1h2a1 1 0 011 1v12a1 1 0 01-1 1h-2a1 1 0 01-1-1V4z"/></svg>
+        Dashboard
+      </div>
+
+      <div class="nav-section">Policies</div>
+      <div class="nav-item" onclick="showPage('library')">
+        <svg class="nav-icon" viewBox="0 0 20 20" fill="currentColor"><path d="M9 4.804A7.968 7.968 0 005.5 4c-1.255 0-2.443.29-3.5.804v10A7.969 7.969 0 015.5 14c1.255 0 2.443.29 3.5.804V4.804zM10.5 14.804A7.968 7.968 0 0114.5 14c1.255 0 2.443.29 3.5.804v-10A7.969 7.969 0 0014.5 4c-1.255 0-2.443.29-3.5.804v10z"/></svg>
+        Policy Library
+        <span class="nav-badge" id="badge-total"></span>
+      </div>
+      <div class="nav-item admin-only" onclick="showPage('editor')" style="display:none">
+        <svg class="nav-icon" viewBox="0 0 20 20" fill="currentColor"><path d="M13.586 3.586a2 2 0 112.828 2.828l-.793.793-2.828-2.828.793-.793zM11.379 5.793L3 14.172V17h2.828l8.38-8.379-2.83-2.828z"/></svg>
+        New Policy
+      </div>
+      <div class="nav-item" onclick="showPage('compliance')">
+        <svg class="nav-icon" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M6.267 3.455a3.066 3.066 0 001.745-.723 3.066 3.066 0 013.976 0 3.066 3.066 0 001.745.723 3.066 3.066 0 012.812 2.812c.051.643.304 1.254.723 1.745a3.066 3.066 0 010 3.976 3.066 3.066 0 00-.723 1.745 3.066 3.066 0 01-2.812 2.812 3.066 3.066 0 00-1.745.723 3.066 3.066 0 01-3.976 0 3.066 3.066 0 00-1.745-.723 3.066 3.066 0 01-2.812-2.812 3.066 3.066 0 00-.723-1.745 3.066 3.066 0 010-3.976 3.066 3.066 0 00.723-1.745 3.066 3.066 0 012.812-2.812zm7.44 5.252a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd"/></svg>
+        Compliance Tracker
+        <span class="nav-badge gold" id="badge-pcc">0</span>
+      </div>
+
+      <div class="nav-section">People</div>
+      <div class="nav-item" onclick="showPage('people')">
+        <svg class="nav-icon" viewBox="0 0 20 20" fill="currentColor"><path d="M9 6a3 3 0 11-6 0 3 3 0 016 0zM17 6a3 3 0 11-6 0 3 3 0 016 0zM12.93 17c.046-.327.07-.660.07-1a6.97 6.97 0 00-1.5-4.33A5 5 0 0119 16v1h-6.07zM6 11a5 5 0 015 5v1H1v-1a5 5 0 015-5z"/></svg>
+        People & Roles
+      </div>
+      <div class="nav-item" onclick="showPage('dbs')">
+        <svg class="nav-icon" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M10 1.944A11.954 11.954 0 012.166 5C2.056 5.649 2 6.319 2 7c0 5.225 3.34 9.67 8 11.317C14.66 16.67 18 12.225 18 7c0-.682-.057-1.35-.166-2.001A11.954 11.954 0 0110 1.944zM11 14a1 1 0 11-2 0 1 1 0 012 0zm0-7a1 1 0 10-2 0v3a1 1 0 102 0V7z" clip-rule="evenodd"/></svg>
+        DBS Register
+      </div>
+
+      <div class="nav-section admin-only" style="display:none">Admin</div>
+      <div class="nav-item admin-only" onclick="showPage('settings')" style="display:none">
+        <svg class="nav-icon" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M11.49 3.17c-.38-1.56-2.6-1.56-2.98 0a1.532 1.532 0 01-2.286.948c-1.372-.836-2.942.734-2.106 2.106.54.886.061 2.042-.947 2.287-1.561.379-1.561 2.6 0 2.978a1.532 1.532 0 01.947 2.287c-.836 1.372.734 2.942 2.106 2.106a1.532 1.532 0 012.287.947c.379 1.561 2.6 1.561 2.978 0a1.533 1.533 0 012.287-.947c1.372.836 2.942-.734 2.106-2.106a1.533 1.533 0 01.947-2.287c1.561-.379 1.561-2.6 0-2.978a1.532 1.532 0 01-.947-2.287c.836-1.372-.734-2.942-2.106-2.106a1.532 1.532 0 01-2.287-.947zM10 13a3 3 0 100-6 3 3 0 000 6z" clip-rule="evenodd"/></svg>
+        Church Settings
+      </div>
+    </nav>
+
+    <div class="sidebar-footer">
+      <div class="sidebar-role" id="sidebar-role-label">Loading…</div>
+      <div class="sidebar-name" id="sidebar-name-label"></div>
+    </div>
+  </aside>
+
+  <!-- Main -->
+  <div class="main">
+    <div class="topbar">
+      <div class="topbar-title" id="page-title">Dashboard</div>
+      <div class="topbar-actions" id="topbar-actions"></div>
+    </div>
+
+    <!-- ── DASHBOARD ──────────────────────────────────────── -->
+    <div class="page active" id="page-dashboard">
+      <div class="stats-row" id="dash-stats"></div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:20px">
+        <div>
+          <div class="section-header"><span class="section-title">Compliance Alerts</span></div>
+          <div id="dash-compliance"></div>
+        </div>
+        <div>
+          <div class="section-header"><span class="section-title">Recent Policies</span></div>
+          <div id="dash-recent"></div>
+        </div>
+      </div>
+      <div style="margin-top:24px">
+        <div class="section-header"><span class="section-title">Policy Coverage by Category</span></div>
+        <div id="dash-categories" style="display:flex;flex-wrap:wrap;gap:10px"></div>
+      </div>
+    </div>
+
+    <!-- ── LIBRARY ─────────────────────────────────────────── -->
+    <div class="page" id="page-library">
+      <div class="filter-bar">
+        <input class="search-input" type="text" id="lib-search" placeholder="Search policies…" oninput="renderLibrary()">
+        <div id="lib-filters" style="display:flex;gap:6px;flex-wrap:wrap"></div>
+      </div>
+      <div class="policy-grid" id="lib-grid"></div>
+    </div>
+
+    <!-- ── POLICY VIEW (full page) ───────────────────────── -->
+    <div class="page" id="page-view">
+      <div id="policy-view-content"></div>
+    </div>
+
+    <!-- ── EDITOR ─────────────────────────────────────────── -->
+    <div class="page" id="page-editor">
+      <div class="editor-layout">
+        <div>
+          <div class="card" style="margin-bottom:16px">
+            <h3 style="font-family:var(--font-serif);font-size:18px;margin-bottom:20px" id="editor-title-heading">New Policy</h3>
+            <div class="form-grid form-grid-2">
+              <div class="form-group">
+                <label class="form-label">Number</label>
+                <input class="form-input" type="text" id="ed-number" placeholder="23">
+              </div>
+              <div class="form-group" style="grid-column:span 1">
+                <label class="form-label">Status</label>
+                <select class="form-input" id="ed-status">
+                  <option value="active">Active</option>
+                  <option value="draft">Draft</option>
+                  <option value="archived">Archived</option>
+                </select>
+              </div>
+            </div>
+            <div class="form-group" style="margin-top:14px">
+              <label class="form-label">Policy Title</label>
+              <input class="form-input" type="text" id="ed-title" placeholder="e.g. Fire Safety Policy">
+            </div>
+            <div class="form-group" style="margin-top:14px">
+              <label class="form-label">Tagline</label>
+              <input class="form-input" type="text" id="ed-tagline" placeholder="One sentence on the policy's purpose">
+            </div>
+            <div class="form-grid form-grid-2" style="margin-top:14px">
+              <div class="form-group">
+                <label class="form-label">Version</label>
+                <input class="form-input" type="text" id="ed-version" placeholder="1.0">
+              </div>
+              <div class="form-group">
+                <label class="form-label">Review Date</label>
+                <input class="form-input" type="text" id="ed-review" placeholder="April 2027">
+              </div>
+            </div>
+            <div class="form-group" style="margin-top:14px">
+              <label class="form-label">Policy Owner</label>
+              <input class="form-input" type="text" id="ed-owner" placeholder="e.g. Operations Manager">
+            </div>
+            <div class="toggle-wrap" style="margin-top:16px">
+              <button class="toggle" id="ed-pcc-toggle" onclick="this.classList.toggle('on')">
+                <div class="toggle-thumb"></div>
+              </button>
+              <span class="toggle-label">PCC Approval Required</span>
+            </div>
+          </div>
+
+          <!-- Sections -->
+          <div style="margin-bottom:10px;display:flex;align-items:center;justify-content:space-between">
+            <h3 style="font-family:var(--font-serif);font-size:18px">Policy Sections</h3>
+            <div class="alert-info alert" style="margin:0;padding:8px 12px;font-size:12px">Use • for bullet points · 1. 2. 3. for numbered steps</div>
+          </div>
+          <div id="ed-sections"></div>
+          <button class="add-section-btn" onclick="addSection()">+ Add Section</button>
+          <div style="margin-top:20px;display:flex;gap:10px">
+            <button class="btn btn-primary" onclick="savePolicy()">Save Policy</button>
+            <button class="btn btn-secondary" onclick="showPage('library')">Cancel</button>
+            <button class="btn btn-danger" id="ed-delete-btn" onclick="deletePolicy()" style="display:none">Delete Policy</button>
+          </div>
+        </div>
+
+        <div class="editor-sidebar">
+          <div class="card card-sm">
+            <h4 style="font-size:12px;font-weight:700;text-transform:uppercase;letter-spacing:.06em;color:var(--muted);margin-bottom:12px">Category</h4>
+            <div id="ed-categories" style="display:flex;flex-direction:column;gap:4px"></div>
+          </div>
+          <div class="card card-sm" style="margin-top:14px">
+            <h4 style="font-size:12px;font-weight:700;text-transform:uppercase;letter-spacing:.06em;color:var(--muted);margin-bottom:10px">Section Guide</h4>
+            <p style="font-size:12px;color:var(--slate);line-height:1.7">
+              Typical structure:<br>
+              1. Purpose / Scope<br>
+              2. Legal Framework<br>
+              3. Responsibilities<br>
+              4. Procedures<br>
+              5. Training<br>
+              6. Breach / Consequences<br>
+              7. Review
+            </p>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ── COMPLIANCE ──────────────────────────────────────── -->
+    <div class="page" id="page-compliance">
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:20px">
+        <div>
+          <div class="section-header"><span class="section-title">PCC Adoption Required</span></div>
+          <div id="comp-pcc-list"></div>
+        </div>
+        <div>
+          <div class="section-header"><span class="section-title">All Policies by Status</span></div>
+          <div id="comp-all-list"></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ── PEOPLE ──────────────────────────────────────────── -->
+    <div class="page" id="page-people">
+      <div class="people-grid" id="people-grid"></div>
+    </div>
+
+    <!-- ── DBS ────────────────────────────────────────────── -->
+    <div class="page" id="page-dbs">
+      <div class="alert alert-info" style="margin-bottom:20px">
+        <svg width="16" height="16" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z" clip-rule="evenodd"/></svg>
+        DBS certificates are never retained — only the reference number, issue date, and level are stored, per ICO guidance.
+      </div>
+      <div class="card">
+        <table class="data-table" id="dbs-table">
+          <thead><tr>
+            <th>Name</th><th>Role</th><th>DBS Level</th><th>Issue Date</th><th>Ref Number</th><th>Status</th>
+          </tr></thead>
+          <tbody id="dbs-tbody"></tbody>
+        </table>
+      </div>
+    </div>
+
+    <!-- ── SETTINGS ───────────────────────────────────────── -->
+    <div class="page" id="page-settings">
+      <div class="editor-layout">
+        <div>
+          <div class="card" style="margin-bottom:16px">
+            <h3 style="font-family:var(--font-serif);font-size:18px;margin-bottom:20px">Church Details</h3>
+            <div class="form-group"><label class="form-label">Church Name</label><input class="form-input" id="cfg-name" type="text"></div>
+            <div class="form-group" style="margin-top:12px"><label class="form-label">Diocese</label><input class="form-input" id="cfg-diocese" type="text"></div>
+            <div class="form-group" style="margin-top:12px"><label class="form-label">Network</label><input class="form-input" id="cfg-network" type="text"></div>
+            <div class="form-group" style="margin-top:12px"><label class="form-label">DBS Umbrella Body</label><input class="form-input" id="cfg-dbs" type="text"></div>
+          </div>
+          <div class="card">
+            <h3 style="font-family:var(--font-serif);font-size:18px;margin-bottom:20px">Key People</h3>
+            <div class="form-grid form-grid-2">
+              <div class="form-group"><label class="form-label">Vicar</label><input class="form-input" id="cfg-vicar" type="text"></div>
+              <div class="form-group"><label class="form-label">Operations Manager</label><input class="form-input" id="cfg-ops" type="text"></div>
+              <div class="form-group"><label class="form-label">PSO (Safeguarding Officer)</label><input class="form-input" id="cfg-pso" type="text"></div>
+              <div class="form-group"><label class="form-label">Churchwarden 1</label><input class="form-input" id="cfg-cw1" type="text"></div>
+              <div class="form-group"><label class="form-label">Churchwarden 2</label><input class="form-input" id="cfg-cw2" type="text"></div>
+            </div>
+            <button class="btn btn-primary" style="margin-top:20px" onclick="saveSettings()">Save Settings</button>
+            <div id="settings-saved" style="display:none;margin-top:10px" class="alert alert-success">
+              Settings saved — policies will reflect updated names on next view.
+            </div>
+          </div>
+        </div>
+        <div class="editor-sidebar">
+          <div class="card card-sm">
+            <h4 style="font-size:12px;font-weight:700;text-transform:uppercase;letter-spacing:.06em;color:var(--muted);margin-bottom:12px">Data Storage</h4>
+            <p style="font-size:12px;color:var(--slate);line-height:1.7;margin-bottom:12px">Policies are saved in your browser. For multi-device sync, export your data and import it on other devices.</p>
+            <button class="btn btn-secondary btn-sm" onclick="exportData()">Export JSON</button>
+            <button class="btn btn-secondary btn-sm" style="margin-top:8px" onclick="document.getElementById('import-file').click()">Import JSON</button>
+            <input type="file" id="import-file" accept=".json" style="display:none" onchange="importData(event)">
+          </div>
+          <div class="card card-sm" style="margin-top:14px">
+            <h4 style="font-size:12px;font-weight:700;text-transform:uppercase;letter-spacing:.06em;color:var(--muted);margin-bottom:12px">GitHub Pages</h4>
+            <p style="font-size:12px;color:var(--slate);line-height:1.7">To deploy: upload <code>index.html</code> and <code>data.js</code> to a GitHub repository, then enable GitHub Pages in Settings → Pages.</p>
+          </div>
+        </div>
+      </div>
+    </div>
+
+  </div><!-- /main -->
+</div><!-- /app -->
+
+<!-- ── MODAL ─────────────────────────────────────────────── -->
+<div class="modal-overlay" id="modal" onclick="if(event.target===this)closeModal()">
+  <div class="modal">
+    <div class="modal-head">
+      <span class="modal-title" id="modal-title">Confirm</span>
+      <button class="btn btn-ghost btn-icon btn-sm" onclick="closeModal()">✕</button>
+    </div>
+    <div class="modal-body" id="modal-body"></div>
+    <div class="modal-foot" id="modal-foot"></div>
+  </div>
+</div>
+
+<script src="data.js"></script>
+<script>
+// ── STATE ─────────────────────────────────────────────────
+let role = null; // 'read' | 'admin'
+let policies = [];
+let config = {};
+let editingId = null;
+let currentPage = 'dashboard';
+
+// ── CATEGORY HELPERS ─────────────────────────────────────
+const CATS = ['All','Safeguarding','Governance','Finance','HR & Employment','Health & Safety','Operations','Communications','Pastoral','Other'];
+const CAT_KEY = {
+  'Safeguarding':'Safeguarding','Governance':'Governance','Finance':'Finance',
+  'HR & Employment':'HR','Health & Safety':'HS','Operations':'Operations',
+  'Communications':'Comms','Pastoral':'Pastoral','Other':'other',
+};
+function catBadge(cat){
+  const m={'Safeguarding':'safeguard','Governance':'governance','Finance':'finance',
+    'HR & Employment':'hr','Health & Safety':'hs','Operations':'ops',
+    'Communications':'comms','Pastoral':'pastoral'};
+  return `<span class="badge badge-${m[cat]||'other'}">${cat}</span>`;
+}
+function catCardClass(cat){
+  const m={'Safeguarding':'Safeguarding','Governance':'Governance','Finance':'Finance',
+    'HR & Employment':'HR','Health & Safety':'HS','Operations':'Operations',
+    'Communications':'Comms','Pastoral':'Pastoral'};
+  return 'cat-'+(m[cat]||'Other');
+}
+
+// ── AUTH ─────────────────────────────────────────────────
+function setAuthMode(m){
+  document.querySelectorAll('.auth-tab').forEach((t,i)=>t.classList.toggle('active',i===(m==='read'?0:1)));
+  document.getElementById('auth-read').style.display=m==='read'?'block':'none';
+  document.getElementById('auth-admin').style.display=m==='admin'?'block':'none';
+}
+function login(r){
+  if(r==='admin'){
+    const pw=document.getElementById('admin-pw').value;
+    if(pw!==config.adminPasswordHash){
+      document.getElementById('auth-error').textContent='Incorrect password';return;
+    }
+  }
+  role=r;
+  document.getElementById('auth-screen').style.display='none';
+  document.getElementById('app').classList.add('visible');
+  document.querySelectorAll('.admin-only').forEach(el=>el.style.display=role==='admin'?'':'none');
+  document.getElementById('sidebar-role-label').textContent=role==='admin'?'Administrator':'Reader';
+  document.getElementById('sidebar-name-label').textContent=config.people?.opsManager?.name||'';
+  init();
+}
+
+// ── INIT ─────────────────────────────────────────────────
+function init(){
+  // Load from localStorage, fall back to bundled data
+  const stored = localStorage.getItem('sfm_policies');
+  const storedCfg = localStorage.getItem('sfm_config');
+  policies = stored ? JSON.parse(stored) : window.SFM_POLICIES.map(p=>({...p}));
+  config = storedCfg ? JSON.parse(storedCfg) : {...window.SFM_CONFIG};
+  renderDashboard();
+  renderLibrary();
+  renderCompliance();
+  renderPeople();
+  renderDBS();
+  renderSettings();
+  updateBadges();
+}
+
+function save(){
+  localStorage.setItem('sfm_policies',JSON.stringify(policies));
+  localStorage.setItem('sfm_config',JSON.stringify(config));
+  updateBadges();
+}
+
+function updateBadges(){
+  document.getElementById('badge-total').textContent=policies.length;
+  const pcc=policies.filter(p=>p.pccRequired).length;
+  document.getElementById('badge-pcc').textContent=pcc;
+}
+
+// ── NAVIGATION ────────────────────────────────────────────
+const PAGE_TITLES={
+  dashboard:'Dashboard',library:'Policy Library',editor:'Policy Editor',
+  view:'Policy',compliance:'Compliance Tracker',people:'People & Roles',
+  dbs:'DBS Register',settings:'Church Settings'
+};
+function showPage(p){
+  document.querySelectorAll('.page').forEach(el=>el.classList.remove('active'));
+  document.querySelectorAll('.nav-item').forEach(el=>el.classList.remove('active'));
+  document.getElementById('page-'+p).classList.add('active');
+  document.querySelectorAll('.nav-item').forEach(el=>{
+    if(el.getAttribute('onclick')&&el.getAttribute('onclick').includes("'"+p+"'"))el.classList.add('active');
+  });
+  document.getElementById('page-title').textContent=PAGE_TITLES[p]||p;
+  currentPage=p;
+  const actions=document.getElementById('topbar-actions');
+  actions.innerHTML='';
+  if(p==='library'&&role==='admin'){
+    actions.innerHTML=`<button class="btn btn-primary" onclick="openNewEditor()">+ New Policy</button>`;
+  }
+  if(p==='view'){
+    actions.innerHTML=`<button class="btn btn-secondary" onclick="showPage('library')">← Library</button>
+    ${role==='admin'?`<button class="btn btn-primary" onclick="openEditEditor(currentViewId)">Edit</button>`:''}
+    <button class="btn btn-ghost" onclick="window.print()">🖨 Print</button>`;
+  }
+}
+
+// ── DASHBOARD ─────────────────────────────────────────────
+function renderDashboard(){
+  const total=policies.length;
+  const safeguarding=policies.filter(p=>p.category==='Safeguarding').length;
+  const pcc=policies.filter(p=>p.pccRequired).length;
+  const custom=policies.filter(p=>p.custom).length;
+  document.getElementById('dash-stats').innerHTML=`
+    <div class="stat-card"><div class="stat-num" style="color:var(--accent)">${total}</div><div class="stat-label">Total Policies</div></div>
+    <div class="stat-card"><div class="stat-num" style="color:var(--red)">${safeguarding}</div><div class="stat-label">Safeguarding Policies</div></div>
+    <div class="stat-card"><div class="stat-num" style="color:var(--gold)">${pcc}</div><div class="stat-label">Require PCC Adoption</div></div>
+    <div class="stat-card"><div class="stat-num" style="color:var(--green)">${custom}</div><div class="stat-label">Custom Policies Added</div></div>
+  `;
+  const comp=document.getElementById('dash-compliance');
+  const items=[
+    {dot:'amber',text:`${pcc} policies require formal PCC adoption`,action:'View compliance tracker'},
+    {dot:'green',text:'35 policies covering all major CofE compliance areas',action:''},
+    {dot:'amber',text:'Annual policy review due: April 2027',action:''},
+    {dot:'green',text:'Safeguarding policy includes Derby Diocese framework',action:''},
+    {dot:'amber',text:'Gift Aid declarations should be verified in ChurchSuite',action:''},
+  ];
+  comp.innerHTML=items.map(i=>`
+    <div class="compliance-item">
+      <div class="compliance-dot ${i.dot}"></div>
+      <div class="compliance-text">${i.text}</div>
+      ${i.action?`<span class="compliance-action" style="cursor:pointer" onclick="showPage('compliance')">${i.action} →</span>`:''}
+    </div>
+  `).join('');
+  const recent=document.getElementById('dash-recent');
+  recent.innerHTML=policies.slice(-5).reverse().map(p=>`
+    <div class="compliance-item" style="cursor:pointer" onclick="viewPolicy('${p.id}')">
+      <div style="flex:1">
+        <div style="font-weight:600;font-size:13px">${p.number}. ${p.title}</div>
+        <div style="font-size:11px;color:var(--muted);margin-top:2px">${p.category}</div>
+      </div>
+      ${catBadge(p.category)}
+    </div>
+  `).join('');
+  const catCounts={};
+  policies.forEach(p=>{catCounts[p.category]=(catCounts[p.category]||0)+1});
+  const catDiv=document.getElementById('dash-categories');
+  catDiv.innerHTML=Object.entries(catCounts).map(([cat,n])=>`
+    <div style="background:var(--white);border:1px solid var(--border);border-radius:8px;padding:12px 18px;cursor:pointer" onclick="filterLibraryTo('${cat}')">
+      ${catBadge(cat)}
+      <span style="font-size:22px;font-family:var(--font-serif);font-weight:600;margin-left:10px;vertical-align:middle">${n}</span>
+    </div>
+  `).join('');
+}
+
+// ── LIBRARY ───────────────────────────────────────────────
+let libFilter='All';
+function filterLibraryTo(cat){libFilter=cat;showPage('library');renderLibrary();}
+function renderLibrary(){
+  const q=(document.getElementById('lib-search')||{}).value||'';
+  const filtersDiv=document.getElementById('lib-filters');
+  if(filtersDiv){
+    filtersDiv.innerHTML=CATS.map(c=>`<button class="filter-pill ${libFilter===c?'active':''}" onclick="libFilter='${c}';renderLibrary()">${c}</button>`).join('');
+  }
+  const q2=q.toLowerCase();
+  const filtered=policies.filter(p=>{
+    const mCat=libFilter==='All'||p.category===libFilter;
+    const mQ=!q2||p.title.toLowerCase().includes(q2)||p.tagline?.toLowerCase().includes(q2)||p.category.toLowerCase().includes(q2);
+    return mCat&&mQ;
+  });
+  const grid=document.getElementById('lib-grid');
+  if(!grid)return;
+  grid.innerHTML=filtered.length===0?'<div style="text-align:center;padding:60px;color:var(--muted)">No policies match your search</div>':
+  filtered.map(p=>`
+    <div class="policy-card ${catCardClass(p.category)}" onclick="viewPolicy('${p.id}')">
+      <div class="policy-num">POLICY ${p.number}</div>
+      <div class="policy-title">${p.title}</div>
+      <div class="policy-tagline">${p.tagline||''}</div>
+      <div class="policy-meta">
+        ${catBadge(p.category)}
+        ${p.pccRequired?`<span class="badge badge-pcc">PCC Required</span>`:''}
+        ${p.custom?`<span class="badge" style="background:#F0FDF4;color:#166534">Custom</span>`:''}
+        <span style="margin-left:auto;font-size:11px;color:var(--muted)">Review: ${p.reviewDate}</span>
+      </div>
+    </div>
+  `).join('');
+}
+
+// ── POLICY VIEW ───────────────────────────────────────────
+let currentViewId=null;
+function viewPolicy(id){
+  const p=policies.find(x=>x.id===id);
+  if(!p)return;
+  currentViewId=id;
+  const metaRows=[
+    ['Applies to','All volunteers and staff at St Francis Mackworth'],
+    ['Approved by',p.pccRequired?'PCC':'Operations Manager'],
+    ['Version',p.version||'1.0'],
+    ['Review date',p.reviewDate||'April 2027'],
+    ['Policy owner',p.owner||'Operations Manager'],
+    ['PSO',config.people?.pso?.name||'Joanne Baillie'],
+    ['Diocese',config.church?.diocese||'Derby Diocese'],
+    ['DBS umbrella body',config.church?.dbsUmbrella||'Thirtyone:eight'],
+  ];
+  const html=`
+    <div class="policy-header-block">
+      <div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:14px">
+        ${catBadge(p.category)}
+        ${p.pccRequired?`<span class="badge badge-pcc">PCC Approval Required</span>`:''}
+        ${p.custom?`<span class="badge" style="background:#F0FDF4;color:#166534">Custom Policy</span>`:''}
+      </div>
+      <div style="font-size:11px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:var(--muted);margin-bottom:6px">
+        ${config.church?.name||'St Francis Mackworth'} · Policy ${p.number}
+      </div>
+      <h1>${p.title}</h1>
+      <p class="tagline">${p.tagline||''}</p>
+      <div class="meta-grid">
+        ${metaRows.map((r,i)=>`
+          <div class="meta-row">
+            <div class="meta-key">${r[0]}</div>
+            <div class="meta-val">${r[1]}</div>
+          </div>
+        `).join('')}
+      </div>
+    </div>
+    ${(p.sections||[]).map(s=>`
+      <div class="policy-section">
+        <div class="policy-section-head"><h3>${s.heading}</h3></div>
+        <div class="policy-section-body"><p>${s.body}</p></div>
+      </div>
+    `).join('')}
+    <div style="margin-top:20px;padding:14px 0;border-top:1px solid var(--border);display:flex;justify-content:space-between;font-size:11px;color:var(--muted)">
+      <span>${config.church?.name||'St Francis Mackworth'} · ${config.church?.diocese||'Derby Diocese'} · Version ${p.version||'1.0'}</span>
+      <span>Review: ${p.reviewDate||'April 2027'}</span>
+    </div>
+  `;
+  document.getElementById('policy-view-content').innerHTML=html;
+  showPage('view');
+}
+
+// ── EDITOR ────────────────────────────────────────────────
+function openNewEditor(){
+  editingId=null;
+  document.getElementById('editor-title-heading').textContent='New Policy';
+  document.getElementById('ed-number').value=String(policies.length+1).padStart(2,'0');
+  document.getElementById('ed-title').value='';
+  document.getElementById('ed-tagline').value='';
+  document.getElementById('ed-version').value='1.0';
+  document.getElementById('ed-review').value='April 2027';
+  document.getElementById('ed-owner').value='Operations Manager';
+  document.getElementById('ed-status').value='active';
+  document.getElementById('ed-pcc-toggle').classList.remove('on');
+  document.getElementById('ed-delete-btn').style.display='none';
+  renderEditorSections([{heading:'1. Purpose',body:''}]);
+  renderCategoryPicker('Other');
+  showPage('editor');
+}
+function openEditEditor(id){
+  const p=policies.find(x=>x.id===id);
+  if(!p)return;
+  editingId=id;
+  document.getElementById('editor-title-heading').textContent='Editing: '+p.title;
+  document.getElementById('ed-number').value=p.number||'';
+  document.getElementById('ed-title').value=p.title||'';
+  document.getElementById('ed-tagline').value=p.tagline||'';
+  document.getElementById('ed-version').value=p.version||'1.0';
+  document.getElementById('ed-review').value=p.reviewDate||'April 2027';
+  document.getElementById('ed-owner').value=p.owner||'Operations Manager';
+  document.getElementById('ed-status').value=p.status||'active';
+  document.getElementById('ed-pcc-toggle').classList.toggle('on',!!p.pccRequired);
+  document.getElementById('ed-delete-btn').style.display=p.custom?'inline-flex':'none';
+  renderEditorSections(p.sections||[{heading:'',body:''}]);
+  renderCategoryPicker(p.category||'Other');
+  showPage('editor');
+}
+
+let editorSections=[];
+function renderEditorSections(secs){
+  editorSections=[...secs];
+  const div=document.getElementById('ed-sections');
+  div.innerHTML=editorSections.map((s,i)=>`
+    <div class="section-editor" id="sec-${i}">
+      <div class="section-editor-head">
+        <span class="section-number">§${i+1}</span>
+        <input class="form-input" style="flex:1;font-weight:600" type="text" value="${esc(s.heading)}" oninput="editorSections[${i}].heading=this.value" placeholder="Section heading">
+        <button class="btn btn-ghost btn-icon btn-sm" onclick="moveSection(${i},-1)" ${i===0?'disabled':''}>↑</button>
+        <button class="btn btn-ghost btn-icon btn-sm" onclick="moveSection(${i},1)" ${i===editorSections.length-1?'disabled':''}>↓</button>
+        <button class="btn btn-danger btn-icon btn-sm" onclick="removeSection(${i})" ${editorSections.length<=1?'disabled':''}>✕</button>
+      </div>
+      <div class="section-editor-body">
+        <textarea class="form-input" style="min-height:110px;font-family:var(--font-serif)" oninput="editorSections[${i}].body=this.value" placeholder="Section content…">${esc(s.body)}</textarea>
+      </div>
+    </div>
+  `).join('');
+}
+function addSection(){
+  editorSections.push({heading:'',body:''});
+  renderEditorSections(editorSections);
+}
+function removeSection(i){
+  if(editorSections.length<=1)return;
+  editorSections.splice(i,1);
+  renderEditorSections(editorSections);
+}
+function moveSection(i,dir){
+  const j=i+dir;
+  if(j<0||j>=editorSections.length)return;
+  [editorSections[i],editorSections[j]]=[editorSections[j],editorSections[i]];
+  renderEditorSections(editorSections);
+}
+
+let selectedCat='Other';
+function renderCategoryPicker(selected){
+  selectedCat=selected;
+  const div=document.getElementById('ed-categories');
+  const cats=CATS.filter(c=>c!=='All');
+  div.innerHTML=cats.map(c=>`
+    <label style="display:flex;align-items:center;gap:8px;cursor:pointer;padding:6px 8px;border-radius:6px;${selectedCat===c?'background:var(--accent-light)':''}">
+      <input type="radio" name="cat" value="${c}" ${selectedCat===c?'checked':''} onchange="selectedCat='${c}';renderCategoryPicker('${c}')">
+      <span style="font-size:13px;${selectedCat===c?'color:var(--accent);font-weight:600':'color:var(--slate)'}">${c}</span>
+    </label>
+  `).join('');
+}
+
+function savePolicy(){
+  const title=document.getElementById('ed-title').value.trim();
+  if(!title){alert('Please enter a policy title.');return;}
+  const policy={
+    id:editingId||'custom_'+Date.now(),
+    number:document.getElementById('ed-number').value.trim(),
+    title,
+    tagline:document.getElementById('ed-tagline').value.trim(),
+    category:selectedCat,
+    pccRequired:document.getElementById('ed-pcc-toggle').classList.contains('on'),
+    version:document.getElementById('ed-version').value.trim()||'1.0',
+    reviewDate:document.getElementById('ed-review').value.trim(),
+    owner:document.getElementById('ed-owner').value.trim(),
+    status:document.getElementById('ed-status').value,
+    sections:editorSections.filter(s=>s.heading||s.body),
+    custom:true,
+    lastModified:new Date().toLocaleDateString('en-GB',{month:'long',year:'numeric'}),
+  };
+  if(editingId){
+    const idx=policies.findIndex(p=>p.id===editingId);
+    if(idx>=0){policies[idx]={...policies[idx],...policy,custom:policies[idx].custom}}
+  } else {
+    policies.push(policy);
+  }
+  save();
+  renderLibrary();
+  renderDashboard();
+  renderCompliance();
+  viewPolicy(policy.id);
+}
+
+function deletePolicy(){
+  const p=policies.find(x=>x.id===editingId);
+  if(!p?.custom){alert('Built-in policies cannot be deleted.');return;}
+  openModal('Delete policy','Are you sure you want to permanently delete "'+p.title+'"? This cannot be undone.',
+    [{label:'Delete',cls:'btn-danger',fn:()=>{policies=policies.filter(x=>x.id!==editingId);save();closeModal();showPage('library');renderLibrary();}}]
+  );
+}
+
+// ── COMPLIANCE ────────────────────────────────────────────
+function renderCompliance(){
+  const pccPolicies=policies.filter(p=>p.pccRequired);
+  document.getElementById('comp-pcc-list').innerHTML=pccPolicies.map(p=>`
+    <div class="compliance-item" style="cursor:pointer" onclick="viewPolicy('${p.id}')">
+      <div class="compliance-dot amber"></div>
+      <div class="compliance-text">
+        <div style="font-weight:600">${p.number}. ${p.title}</div>
+        <div style="font-size:11px;color:var(--muted)">Owner: ${p.owner||'Operations Manager'}</div>
+      </div>
+      <span class="badge badge-pcc">PCC Required</span>
+    </div>
+  `).join('');
+  const sorted=[...policies].sort((a,b)=>Number(a.number||99)-Number(b.number||99));
+  document.getElementById('comp-all-list').innerHTML=sorted.map(p=>`
+    <div class="compliance-item" style="cursor:pointer" onclick="viewPolicy('${p.id}')">
+      <div class="compliance-dot green"></div>
+      <div class="compliance-text" style="font-size:12px">
+        <strong>${p.number}. ${p.title}</strong>
+        <span style="color:var(--muted);margin-left:8px">v${p.version||'1.0'}</span>
+      </div>
+      ${catBadge(p.category)}
+    </div>
+  `).join('');
+}
+
+// ── PEOPLE ────────────────────────────────────────────────
+function renderPeople(){
+  const cfg=config.people||{};
+  const cards=[];
+  if(cfg.vicar?.name)cards.push({role:'Vicar',p:cfg.vicar});
+  if(cfg.opsManager?.name)cards.push({role:'Operations Manager',p:cfg.opsManager});
+  if(cfg.pso?.name)cards.push({role:'Parish Safeguarding Officer',p:cfg.pso});
+  (cfg.churchwardens||[]).forEach(p=>cards.push({role:'Churchwarden',p}));
+  (cfg.ministryLeads||[]).forEach(p=>cards.push({role:'Ministry Lead — '+p.ministry,p}));
+  (cfg.staff||[]).forEach(p=>cards.push({role:'Staff — '+p.role,p,dbs:p.dbs,dbsDate:p.dbsDate,dbsLevel:p.dbsLevel}));
+  const grid=document.getElementById('people-grid');
+  grid.innerHTML=cards.map(c=>`
+    <div class="person-card">
+      <div class="person-role">${c.role}</div>
+      <div class="person-name">${c.p.name||'[Not set]'}</div>
+      ${c.p.email?`<div class="person-email">${c.p.email}</div>`:''}
+      ${c.dbs?`<span class="person-dbs valid">✓ DBS ${c.dbsLevel||'Enhanced'} — ${c.dbsDate||'date TBC'}</span>`:''}
+    </div>
+  `).join('');
+  if(role==='admin'){
+    grid.innerHTML+=`<div class="person-card" style="border:1.5px dashed var(--border);background:none;cursor:pointer;display:flex;align-items:center;justify-content:center;min-height:120px" onclick="showPage('settings')">
+      <div style="text-align:center;color:var(--muted)">
+        <div style="font-size:24px;margin-bottom:6px">+</div>
+        <div style="font-size:13px">Update People</div>
+      </div>
+    </div>`;
+  }
+}
+
+// ── DBS ───────────────────────────────────────────────────
+function renderDBS(){
+  const staff=(config.people?.staff||[]).filter(s=>s.dbs);
+  const tbody=document.getElementById('dbs-tbody');
+  if(!tbody)return;
+  tbody.innerHTML=staff.map(s=>`
+    <tr>
+      <td style="font-weight:600">${s.name}</td>
+      <td>${s.role}</td>
+      <td>${s.dbsLevel||'Enhanced'}</td>
+      <td>${s.dbsDate||'—'}</td>
+      <td style="font-family:monospace;font-size:12px">${s.dbsRef||'—'}</td>
+      <td><span class="badge badge-active">Active</span></td>
+    </tr>
+  `).join('');
+  if(!staff.length)tbody.innerHTML=`<tr><td colspan="6" style="text-align:center;color:var(--muted);padding:32px">No DBS records yet. Add staff in Church Settings.</td></tr>`;
+}
+
+// ── SETTINGS ─────────────────────────────────────────────
+function renderSettings(){
+  const ch=config.church||{};
+  const pp=config.people||{};
+  const v=(id,val)=>{ const el=document.getElementById(id); if(el)el.value=val||''; };
+  v('cfg-name',ch.name);v('cfg-diocese',ch.diocese);v('cfg-network',ch.network);v('cfg-dbs',ch.dbsUmbrella);
+  v('cfg-vicar',pp.vicar?.name);v('cfg-ops',pp.opsManager?.name);v('cfg-pso',pp.pso?.name);
+  v('cfg-cw1',pp.churchwardens?.[0]?.name);v('cfg-cw2',pp.churchwardens?.[1]?.name);
+}
+function saveSettings(){
+  config.church.name=document.getElementById('cfg-name').value;
+  config.church.diocese=document.getElementById('cfg-diocese').value;
+  config.church.network=document.getElementById('cfg-network').value;
+  config.church.dbsUmbrella=document.getElementById('cfg-dbs').value;
+  config.people.vicar.name=document.getElementById('cfg-vicar').value;
+  config.people.opsManager.name=document.getElementById('cfg-ops').value;
+  config.people.pso.name=document.getElementById('cfg-pso').value;
+  if(!config.people.churchwardens)config.people.churchwardens=[{},{} ];
+  config.people.churchwardens[0].name=document.getElementById('cfg-cw1').value;
+  config.people.churchwardens[1].name=document.getElementById('cfg-cw2').value;
+  save();
+  renderPeople();
+  const saved=document.getElementById('settings-saved');
+  saved.style.display='flex';
+  setTimeout(()=>saved.style.display='none',3000);
+}
+
+// ── EXPORT / IMPORT ───────────────────────────────────────
+function exportData(){
+  const data={policies,config,exported:new Date().toISOString()};
+  const blob=new Blob([JSON.stringify(data,null,2)],{type:'application/json'});
+  const a=document.createElement('a');
+  a.href=URL.createObjectURL(blob);
+  a.download='sfm-policy-data-'+new Date().toISOString().slice(0,10)+'.json';
+  a.click();
+}
+function importData(event){
+  const file=event.target.files[0];
+  if(!file)return;
+  const reader=new FileReader();
+  reader.onload=(e)=>{
+    try{
+      const data=JSON.parse(e.target.result);
+      if(data.policies)policies=data.policies;
+      if(data.config)config=data.config;
+      save();
+      renderDashboard();renderLibrary();renderCompliance();renderPeople();renderDBS();renderSettings();
+      alert('Data imported successfully — '+policies.length+' policies loaded.');
+    }catch(err){alert('Import failed: '+err.message);}
+  };
+  reader.readAsText(file);
+}
+
+// ── MODAL ─────────────────────────────────────────────────
+function openModal(title,body,actions=[]){
+  document.getElementById('modal-title').textContent=title;
+  document.getElementById('modal-body').innerHTML=`<p style="font-size:14px;color:var(--slate)">${body}</p>`;
+  document.getElementById('modal-foot').innerHTML=
+    `<button class="btn btn-secondary" onclick="closeModal()">Cancel</button>`+
+    actions.map(a=>`<button class="btn ${a.cls}" onclick="(${a.fn.toString()})()">${a.label}</button>`).join('');
+  document.getElementById('modal').classList.add('open');
+}
+function closeModal(){document.getElementById('modal').classList.remove('open')}
+
+// ── UTILS ─────────────────────────────────────────────────
+function esc(s){return (s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;')}
+
+// ── BOOT ─────────────────────────────────────────────────
+// Pre-load config for auth (so password check works)
+config = window.SFM_CONFIG;
+const storedCfg=localStorage.getItem('sfm_config');
+if(storedCfg)config={...config,...JSON.parse(storedCfg)};
+</script>
+</body>
+</html>
