@@ -25,6 +25,7 @@
 | 06 | Post-implementation audit fixes | ✅ Done (`b0eb0dc`, `7a38769`, `0237f09`). All 7 items verified against live code first — none were false positives this round |
 | 07 | DBS register & expiry tracking | ❌ Cancelled — DBS tracking handled via thirtyone:eight; feature is superfluous |
 | 08 | Annual review support | Code items done (`a804025`, `09a5128`): lastReviewed/reviewedBy metadata fields, admin review pack generator. Items 3 & 4 (content currency review, emerging topics refresh) are recurring Claude-assisted work. Two date decisions still with James: p37 overdue, p42 due now |
+| 09 | Full review round 3 | Open — 32 findings (R1–R32): duplicate/contradictory policies (two live finance policies disagree on spend limits), archived-status mechanism, XSS-via-import fix, compliance-page corrections, end-user UX. Execution batches defined in the plan; batch 1 (content decisions) needs James first |
 
 Additional fixes landed outside the plans during execution: emerging-topics onclick quote collision (`c51c611`), sidebar New Policy init skip (`8fa4c69`), template body pre-population + 💡 heading-normalisation (`e74a53f`), form-input width collapse (`a6880a4`).
 
