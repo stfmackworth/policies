@@ -959,12 +959,101 @@ function buildComplianceAlerts(){
   return items.slice(0,5);
 }
 
+// ── HOUSE-STYLE PRINT ─────────────────────────────────────
+// Standalone print documents (own <html><head><style>) so the PCC house
+// style (Calibri, black-on-white, logo, clause numbering, three-part
+// footer) is independent of the on-screen design system above.
+function houseStyleLogoUrl(){
+  return new URL('assets/logo.png',location.href).href;
+}
+function houseStyleFooterCSS(){
+  // position:fixed repeats the left/centre text on every printed page in
+  // Chrome. The @page margin-box rule is the CSS-correct way to add a
+  // live page number, but Chrome's print engine does not render @page
+  // margin boxes — verify in Chrome print preview; if the page number
+  // doesn't appear, that's this known limitation, not a bug to chase.
+  return `
+    .house-footer{position:fixed;bottom:0.6cm;left:2cm;right:2cm;display:flex;justify-content:space-between;gap:12px;font-size:9pt;color:#000;border-top:1px solid #000;padding-top:4px}
+    .house-footer .center{flex:1;text-align:center}
+    @page{margin:2.5cm 2cm 3.2cm 2cm;@bottom-right{content:"Page " counter(page) " of " counter(pages)}}
+  `;
+}
+function houseStyleLogoCSS(){
+  return `.house-logo{position:fixed;top:1cm;right:1.5cm;width:60px}`;
+}
+function renderHouseStylePolicy(p){
+  const churchName=esc(config.church?.name||'St Francis Mackworth');
+  const version=esc(p.version||'1.0');
+  const dateStr=esc(p.reviewDate||new Date().toLocaleDateString('en-GB',{day:'numeric',month:'long',year:'numeric'}));
+  const title=esc(p.title);
+  const category=esc(p.category||'');
+  // Section headings in data.js already carry their own leading number
+  // ("1. Purpose", "2. Scope", ...) — render as-is, don't renumber.
+  const sectionsHTML=(p.sections||[]).map(s=>`
+    <div class="clause">
+      <h2>${esc(s.heading)}</h2>
+      <p>${esc(s.body)}</p>
+    </div>`).join('');
+  const css=`
+    ${houseStyleFooterCSS()}
+    ${houseStyleLogoCSS()}
+    *{box-sizing:border-box}
+    body{font-family:Calibri,sans-serif;color:#000;background:#fff;margin:0;font-size:12pt;line-height:1.5}
+    .cover{page-break-after:always;min-height:22cm;display:flex;flex-direction:column;padding-top:2cm}
+    .cover h1{font-size:22pt;margin:0 0 6px}
+    .cover .cat,.cover .ver{font-size:11pt;margin:0 0 4px}
+    .cover table{width:100%;border-collapse:collapse;margin-top:30px}
+    .cover caption{text-align:left;font-weight:bold;margin-bottom:6px;font-size:12pt}
+    .cover th,.cover td{border:1px solid #000;padding:6px 8px;font-size:10.5pt;text-align:left}
+    .attribution{font-style:italic;margin-top:auto;padding-top:40px}
+    .clause{break-inside:avoid;margin-bottom:16px}
+    .clause h2{font-size:13pt;margin:0 0 6px}
+    .clause p{margin:0;white-space:pre-wrap}
+  `;
+  const html=`<!DOCTYPE html><html lang="en"><head><meta charset="utf-8"><title>${title}</title><style>${css}</style></head>
+<body>
+  <img class="house-logo" src="${houseStyleLogoUrl()}" alt="${churchName} logo">
+  <div class="cover">
+    <h1>${title}</h1>
+    <div class="cat">${category}</div>
+    <div class="ver">Version ${version} &middot; ${dateStr}</div>
+    <table>
+      <caption>Revisions</caption>
+      <thead><tr><th>Version</th><th>Date</th><th>Summary of Change</th><th>Author</th></tr></thead>
+      <tbody><tr><td>${version}</td><td>${dateStr}</td><td></td><td></td></tr></tbody>
+    </table>
+    <p class="attribution">Approved by the PCC of St Francis Mackworth</p>
+  </div>
+  ${sectionsHTML}
+  <div class="house-footer"><span>v${version} &middot; ${dateStr}</span><span class="center">${title}</span><span></span></div>
+  <script>window.onload=function(){window.print();}<\/script>
+</body></html>`;
+  return html;
+}
+function openHouseStylePrint(html){
+  const win=window.open('','_blank');
+  if(!win){openModal('Popup Blocked','Please allow popups for this site to open the print view.',[]);return;}
+  win.document.write(html);
+  win.document.close();
+}
+
 // ── PDF DOWNLOAD ──────────────────────────────────────────
 function downloadPDF(){
   openModal('Save Policy as PDF',
     `<p style="font-size:14px;color:var(--slate);margin-bottom:14px">Your browser will open a print dialog. Set the destination to <strong>"Save as PDF"</strong> to download a formatted copy of this policy.</p>
      <p style="font-size:14px;color:var(--slate)">To share with the team, drag the saved file into the <a href="${DRIVE_FOLDER_URL}" target="_blank" style="color:var(--accent-mid)">STF Google Drive folder ↗</a>.</p>`,
-    [{label:'Open Print Dialog',cls:'btn-primary',fn:()=>{closeModal();setTimeout(()=>window.print(),300);}}]
+    [{label:'Open Print Dialog',cls:'btn-primary',fn:()=>{
+      const p=policies.find(x=>x.id===currentViewId);
+      if(!p)return;
+      // window.open() must run synchronously inside the click handler —
+      // a setTimeout here breaks Chrome's user-gesture chain and the
+      // popup silently gets blocked.
+      const win=window.open('','_blank');
+      closeModal();
+      if(!win){openModal('Popup Blocked','Please allow popups for this site to open the print view.',[]);return;}
+      win.document.write(renderHouseStylePolicy(p));
+      win.document.close();
+    }}]
   );
 }
 
@@ -1473,15 +1562,29 @@ function generateReviewPack(){
   const dateStr=today.toLocaleDateString('en-GB',{day:'numeric',month:'long',year:'numeric'});
   const overdue=sorted.filter(p=>pStatus(p).cls==='overdue');
   const dueSoon=sorted.filter(p=>pStatus(p).cls==='due-soon');
-  const css=`body{font-family:Georgia,serif;margin:0;padding:32px;color:#1a1a1a;font-size:13px}h1{font-size:22px;margin:0 0 4px}h2{font-size:15px;margin:28px 0 10px;border-bottom:1px solid #ccc;padding-bottom:4px}p.sub{margin:0 0 24px;color:#555;font-size:13px}table{width:100%;border-collapse:collapse;margin-bottom:8px}th{background:#1A3D2B;color:#fff;text-align:left;padding:7px 10px;font-size:12px}td{padding:6px 10px;border-bottom:1px solid #e5e5e5;vertical-align:top;font-size:12px}tr:nth-child(even) td{background:#f9f8f5}.overdue{color:#b91c1c;font-weight:600}.due-soon{color:#92400e;font-weight:600}.due-year{color:#78350f}.current{color:#166534}.unknown{color:#666}.pcc-tag{font-size:11px;background:#fef3c7;color:#92400e;border-radius:3px;padding:1px 5px}.alert-row{margin-bottom:8px;padding:9px 12px;border-left:3px solid #b91c1c;background:#fef2f2;font-size:13px}.alert-row.amber{border-color:#F59E0B;background:#fffbeb}.tagline{font-size:12px;color:#666;margin-top:2px}footer{margin-top:40px;border-top:1px solid #ccc;padding-top:10px;font-size:11px;color:#888;display:flex;justify-content:space-between}@media print{body{padding:16px}h2{page-break-before:auto}}`;
-  const rows=sorted.map(p=>`<tr><td>${esc(p.number||'—')}</td><td>${esc(p.title)}${p.pccRequired?' <span class="pcc-tag">PCC</span>':''}</td><td>${esc(p.category||'—')}</td><td>v${esc(p.version||'1.0')}</td><td>${esc(p.reviewDate||'—')}</td><td class="${pStatus(p).cls}">${pStatus(p).label}</td></tr>`).join('');
+  const css=`
+    ${houseStyleFooterCSS()}
+    ${houseStyleLogoCSS()}
+    body{font-family:Calibri,sans-serif;margin:0;padding:32px 32px 40px;color:#000;background:#fff;font-size:12pt}
+    h1{font-size:20pt;margin:0 0 4px}h2{font-size:13pt;margin:24px 0 10px;border-bottom:1px solid #000;padding-bottom:4px}
+    p.sub{margin:0 0 24px;color:#000;font-size:11pt}
+    table{width:100%;border-collapse:collapse;margin-bottom:8px}
+    th{border:1px solid #000;font-weight:bold;text-align:left;padding:7px 10px;font-size:10.5pt}
+    td{border:1px solid #000;padding:6px 10px;vertical-align:top;font-size:10.5pt}
+    .pcc-tag{font-size:10pt;font-weight:bold;border:1px solid #000;border-radius:3px;padding:1px 5px}
+    .alert-row{margin-bottom:8px;padding:9px 12px;border-left:3px solid #000;font-size:11pt}
+    .tagline{font-size:10.5pt;margin-top:2px}
+    @media print{body{padding:16px}h2{page-break-before:auto}}
+  `;
+  const rows=sorted.map(p=>`<tr><td>${esc(p.number||'—')}</td><td>${esc(p.title)}${p.pccRequired?' <span class="pcc-tag">PCC</span>':''}</td><td>${esc(p.category||'—')}</td><td>v${esc(p.version||'1.0')}</td><td>${esc(p.reviewDate||'—')}</td><td>${pStatus(p).label}</td></tr>`).join('');
   const overdueHTML=overdue.length?`<h2>Overdue for Review (${overdue.length})</h2>${overdue.map(p=>`<div class="alert-row"><strong>${esc(p.number)}. ${esc(p.title)}</strong> — ${esc(p.reviewDate||'no date')}${p.tagline?`<div class="tagline">${esc(p.tagline)}</div>`:''}</div>`).join('')}`:'';
-  const dueSoonHTML=dueSoon.length?`<h2>Due within 3 Months (${dueSoon.length})</h2>${dueSoon.map(p=>`<div class="alert-row amber"><strong>${esc(p.number)}. ${esc(p.title)}</strong> — ${esc(p.reviewDate||'no date')}${p.tagline?`<div class="tagline">${esc(p.tagline)}</div>`:''}</div>`).join('')}`:'';
-  const html=`<!DOCTYPE html><html lang="en"><head><meta charset="utf-8"><title>${churchName} — Policy Review Pack</title><style>${css}</style></head><body><h1>${churchName} — Policy Review Pack</h1><p class="sub">Generated ${dateStr} &middot; ${sorted.length} policies</p>${overdueHTML}${dueSoonHTML}<h2>All Policies by Status</h2><table><thead><tr><th>#</th><th>Title</th><th>Category</th><th>Ver</th><th>Review Date</th><th>Status</th></tr></thead><tbody>${rows}</tbody></table><footer><span>${churchName}</span><span>Review Pack &middot; ${dateStr}</span></footer><script>window.onload=function(){window.print();}<\/script></body></html>`;
-  const win=window.open('','_blank');
-  if(!win){openModal('Popup Blocked','Please allow popups for this site to open the review pack.',[]);return;}
-  win.document.write(html);
-  win.document.close();
+  const dueSoonHTML=dueSoon.length?`<h2>Due within 3 Months (${dueSoon.length})</h2>${dueSoon.map(p=>`<div class="alert-row"><strong>${esc(p.number)}. ${esc(p.title)}</strong> — ${esc(p.reviewDate||'no date')}${p.tagline?`<div class="tagline">${esc(p.tagline)}</div>`:''}</div>`).join('')}`:'';
+  const html=`<!DOCTYPE html><html lang="en"><head><meta charset="utf-8"><title>${churchName} — Policy Review Pack</title><style>${css}</style></head><body>
+  <img class="house-logo" src="${houseStyleLogoUrl()}" alt="${churchName} logo">
+  <h1>${churchName} — Policy Review Pack</h1><p class="sub">Generated ${dateStr} &middot; ${sorted.length} policies</p>${overdueHTML}${dueSoonHTML}<h2>All Policies by Status</h2><table><thead><tr><th>#</th><th>Title</th><th>Category</th><th>Ver</th><th>Review Date</th><th>Status</th></tr></thead><tbody>${rows}</tbody></table>
+  <div class="house-footer"><span>${dateStr}</span><span class="center">Policy Review Pack</span><span></span></div>
+  <script>window.onload=function(){window.print();}<\/script></body></html>`;
+  openHouseStylePrint(html);
 }
 
 // ── PEOPLE ────────────────────────────────────────────────
